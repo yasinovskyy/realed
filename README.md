@@ -1,10 +1,11 @@
 # *ReAlEd*: Relational Algebra for Education
 
-A simple wrapper around `pandas` to demonstrate common relation algebra operations:
+A simple wrapper around `pandas` to demonstrate common relational algebra operations:
 
-- projection
 - selection
+- projection
 - renaming
+- extending
 - sorting
 - grouping
 - joining relations
@@ -13,54 +14,79 @@ A simple wrapper around `pandas` to demonstrate common relation algebra operatio
 
 ```python
 >>> from realed import Relation
->>> r = Relation("menagerie.csv")
+>>> penguins = Relation("palmerpenguins.csv")
 >>> r
-   id                name  age               species   location
-0   1               Chunk   34                Jaguar      Attic
-1   2                Wind   99                  Newt   Basement
-2   3  Underrated Thunder   74      Macaroni Penguin   Basement
-3   4                 Axe   23        Long-Eared Owl     Garage
-4   5        Wild Isotope   28      Humboldt Penguin      Attic
-5   6          Night Star   26                  Newt     Garage
-6   7        Random Bully   52             Armadillo  Back yard
-7   8        Cunning Fury   38  Pink Fairy Armadillo  Back yard
-8   9       Evening Chunk   50                  Newt   Basement
-9  10             Thunder   38                Jaguar      Attic
+     rowid    species     island  bill_length_mm  bill_depth_mm  flipper_length_mm  body_mass_g     sex  year
+0        1     Adelie  Torgersen            39.1           18.7              181.0       3750.0    male  2007
+1        2     Adelie  Torgersen            39.5           17.4              186.0       3800.0  female  2007
+2        3     Adelie  Torgersen            40.3           18.0              195.0       3250.0  female  2007
+3        4     Adelie  Torgersen             NaN            NaN                NaN          NaN     NaN  2007
+4        5     Adelie  Torgersen            36.7           19.3              193.0       3450.0  female  2007
+..     ...        ...        ...             ...            ...                ...          ...     ...   ...
+339    340  Chinstrap      Dream            55.8           19.8              207.0       4000.0    male  2009
+340    341  Chinstrap      Dream            43.5           18.1              202.0       3400.0  female  2009
+341    342  Chinstrap      Dream            49.6           18.2              193.0       3775.0    male  2009
+342    343  Chinstrap      Dream            50.8           19.0              210.0       4100.0    male  2009
+343    344  Chinstrap      Dream            50.2           18.7              198.0       3775.0  female  2009
 >>>
 ```
 
 ## Selection
 
 Both `select` and `query` filter records by some criteria.
+The query expression is parsed by `pandas`.
 
 ```python
 >>> from realed import Relation
->>> r = Relation("menagerie.csv")
->>> r.select("name == 'Wild Isotope'")
-   id          name  age           species location
-4   5  Wild Isotope   28  Humboldt Penguin    Attic
+>>> penguins = Relation("palmerpenguins.csv")
+>>> penguins.select("species == 'Adelie'")
+     rowid species     island  bill_length_mm  bill_depth_mm  flipper_length_mm  body_mass_g     sex  year
+0        1  Adelie  Torgersen            39.1           18.7              181.0       3750.0    male  2007
+1        2  Adelie  Torgersen            39.5           17.4              186.0       3800.0  female  2007
+2        3  Adelie  Torgersen            40.3           18.0              195.0       3250.0  female  2007
+3        4  Adelie  Torgersen             NaN            NaN                NaN          NaN     NaN  2007
+4        5  Adelie  Torgersen            36.7           19.3              193.0       3450.0  female  2007
+..     ...     ...        ...             ...            ...                ...          ...     ...   ...
+147    148  Adelie      Dream            36.6           18.4              184.0       3475.0  female  2009
+148    149  Adelie      Dream            36.0           17.8              195.0       3450.0  female  2009
+149    150  Adelie      Dream            37.8           18.1              193.0       3750.0    male  2009
+150    151  Adelie      Dream            36.0           17.1              187.0       3700.0  female  2009
+151    152  Adelie      Dream            41.5           18.5              201.0       4000.0    male  2009
 >>>
 ```
 
 ```python
 >>> from realed import Relation
->>> r = Relation("menagerie.csv")
->>> r.query("name == 'Underrated Thunder'")
-   id                name  age           species  location
-2   3  Underrated Thunder   74  Macaroni Penguin  Basement
->>>
+>>> penguins = Relation("palmerpenguins.csv")
+>>> penguins.select("species == 'Adelie' and island == 'Torgersen' and year == 2009 and body_mass_g >= 4000")
+     rowid species     island  bill_length_mm  bill_depth_mm  flipper_length_mm  body_mass_g   sex  year
+125    126  Adelie  Torgersen            40.6           19.0              199.0       4000.0  male  2009
+127    128  Adelie  Torgersen            41.5           18.3              195.0       4300.0  male  2009
+129    130  Adelie  Torgersen            44.1           18.0              210.0       4000.0  male  2009
+```
+
+Since each operation return a `Relation`, operations can be chained:
+
+```python
+>>> penguins.select("species == 'Adelie'").select("island == 'Torgersen'").select("year == 2009").select("body_mass_g >= 4000")
+     rowid species     island  bill_length_mm  bill_depth_mm  flipper_length_mm  body_mass_g   sex  year
+125    126  Adelie  Torgersen            40.6           19.0              199.0       4000.0  male  2009
+127    128  Adelie  Torgersen            41.5           18.3              195.0       4300.0  male  2009
+129    130  Adelie  Torgersen            44.1           18.0              210.0       4000.0  male  2009
 ```
 
 ## Projection
 
 ```python
 >>> from realed import Relation
->>> r = Relation("menagerie.csv")
->>> r.project(["name", "species"]).head(3)
-                 name           species
-0               Chunk            Jaguar
-1                Wind              Newt
-2  Underrated Thunder  Macaroni Penguin
+>>> penguins = Relation("palmerpenguins.csv")
+>>> penguins.project(["species", "island"])
+       species     island
+0       Adelie  Torgersen
+20      Adelie     Biscoe
+30      Adelie      Dream
+152     Gentoo     Biscoe
+276  Chinstrap      Dream
 >>>
 ```
 
@@ -69,12 +95,12 @@ Both `select` and `query` filter records by some criteria.
 ```python
 
 >>> from realed import Relation
->>> r = Relation("menagerie.csv")
->>> r.rename("location", "place").project(["name", "place"]).head(3)
-                 name     place
-0               Chunk     Attic
-1                Wind  Basement
-2  Underrated Thunder  Basement
+>>> penguins = Relation("palmerpenguins.csv")
+>>> penguins.rename("island", "location").project(["species", "location"]).head(3)
+   species   location
+0   Adelie  Torgersen
+20  Adelie     Biscoe
+30  Adelie      Dream
 >>>
 ```
 
@@ -82,25 +108,60 @@ Both `select` and `query` filter records by some criteria.
 
 ```python
 >>> from realed import Relation
->>> r = Relation("menagerie.csv")
->>> r.sort(["location"]).head(3)
-   id          name  age           species location
-0   1         Chunk   34            Jaguar    Attic
-4   5  Wild Isotope   28  Humboldt Penguin    Attic
-9  10       Thunder   38            Jaguar    Attic
+>>> penguins = Relation("palmerpenguins.csv")
+>>> penguins.sort(["species"]).head(3)
+    rowid species     island  bill_length_mm  ...  flipper_length_mm  body_mass_g     sex  year
+0       1  Adelie  Torgersen            39.1  ...              181.0       3750.0    male  2007
+97     98  Adelie      Dream            40.3  ...              196.0       4350.0    male  2008
+98     99  Adelie      Dream            33.1  ...              178.0       2900.0  female  2008
 >>>
 ```
+
+```python
+>>> penguins.sort(["species", "rowid"]).head(3)
+   rowid species     island  bill_length_mm  ...  flipper_length_mm  body_mass_g     sex  year
+0      1  Adelie  Torgersen            39.1  ...              181.0       3750.0    male  2007
+1      2  Adelie  Torgersen            39.5  ...              186.0       3800.0  female  2007
+2      3  Adelie  Torgersen            40.3  ...              195.0       3250.0  female  2007
+```
+
+Be mindful of the order of sorting operations.
+
+```python
+>>> penguins.sort(["body_mass_g"], ascending=False).sort(["species"]).head(3)
+     rowid species     island  bill_length_mm  ...  flipper_length_mm  body_mass_g     sex  year
+111    112  Adelie     Biscoe            45.6  ...              191.0       4600.0    male  2009
+76      77  Adelie  Torgersen            40.9  ...              191.0       3700.0  female  2008
+14      15  Adelie  Torgersen            34.6  ...              198.0       4400.0    male  2007
+```
+
+```python
+>>> penguins.sort(["species"]).sort(["body_mass_g"], ascending=False).head(3)
+     rowid species  island  bill_length_mm  ...  flipper_length_mm  body_mass_g   sex  year
+169    170  Gentoo  Biscoe            49.2  ...              221.0       6300.0  male  2007
+185    186  Gentoo  Biscoe            59.6  ...              230.0       6050.0  male  2007
+269    270  Gentoo  Biscoe            48.8  ...              222.0       6000.0  male  2009
+```
+
 
 ## Extending
 
 ```python
 >>> from realed import Relation
->>> r = Relation("menagerie.csv")
->>> r.extend("yob", 2026-r.age).head(3)
-   id                name  age           species  location   yob
-0   1               Chunk   34            Jaguar     Attic  1992
-1   2                Wind   99              Newt  Basement  1927
-2   3  Underrated Thunder   74  Macaroni Penguin  Basement  1952
+>>> penguins = Relation("palmerpenguins.csv")
+>>> penguins.extend("year_since_found", 2026-penguins.year)
+     rowid    species     island  bill_length_mm  ...  body_mass_g     sex  year year_since_found
+0        1     Adelie  Torgersen            39.1  ...       3750.0    male  2007               19
+1        2     Adelie  Torgersen            39.5  ...       3800.0  female  2007               19
+2        3     Adelie  Torgersen            40.3  ...       3250.0  female  2007               19
+3        4     Adelie  Torgersen             NaN  ...          NaN     NaN  2007               19
+4        5     Adelie  Torgersen            36.7  ...       3450.0  female  2007               19
+..     ...        ...        ...             ...  ...          ...     ...   ...              ...
+339    340  Chinstrap      Dream            55.8  ...       4000.0    male  2009               17
+340    341  Chinstrap      Dream            43.5  ...       3400.0  female  2009               17
+341    342  Chinstrap      Dream            49.6  ...       3775.0    male  2009               17
+342    343  Chinstrap      Dream            50.8  ...       4100.0    male  2009               17
+343    344  Chinstrap      Dream            50.2  ...       3775.0  female  2009               17
 >>>
 ```
 
@@ -108,60 +169,52 @@ Both `select` and `query` filter records by some criteria.
 
 ```python
 >>> from realed import Relation
->>> r = Relation("menagerie.csv")
->>> r.groupby(["species"]).count("id")
-                species  count_id
-0             Armadillo         1
-1      Humboldt Penguin         1
-2                Jaguar         2
-3        Long-Eared Owl         1
-4      Macaroni Penguin         1
-5                  Newt         3
-6  Pink Fairy Armadillo         1
->>> r.groupby(["location"]).count("id")
-    location  count_id
-0      Attic         3
-1  Back yard         2
-2   Basement         3
-3     Garage         2
->>> r.groupby(["location"]).sum("age")
-    location  sum_age
-0      Attic      100
-1  Back yard       90
-2   Basement      223
-3     Garage       49
->>> r.groupby(["location"]).min("age")
-    location  min_age
-0      Attic       28
-1  Back yard       38
-2   Basement       50
-3     Garage       23
->>> r.groupby(["location"]).max("age")
-    location  max_age
-0      Attic       38
-1  Back yard       52
-2   Basement       99
-3     Garage       26
->>> r.groupby(["location"]).mean("age")
-    location   mean_age
-0      Attic  33.333333
-1  Back yard  45.000000
-2   Basement  74.333333
-3     Garage  24.500000
->>> r.groupby(["location"]).median("age")
-    location  median_age
-0      Attic        34.0
-1  Back yard        45.0
-2   Basement        74.0
-3     Garage        24.5
->>> r.groupby(["location", "species"]).count("name")
-    location               species  count_name
-0      Attic      Humboldt Penguin           1
-1      Attic                Jaguar           2
-2  Back yard             Armadillo           1
-3  Back yard  Pink Fairy Armadillo           1
-4   Basement      Macaroni Penguin           1
-5   Basement                  Newt           2
-6     Garage        Long-Eared Owl           1
-7     Garage                  Newt           1
+>>> penguins = Relation("palmerpenguins.csv")
+>>> penguins.groupby(["species"]).count("rowid")
+     species  count_rowid
+0     Adelie          152
+1  Chinstrap           68
+2     Gentoo          124
+>>> penguins.groupby(["island"]).count("rowid")
+      island  count_rowid
+0     Biscoe          168
+1      Dream          124
+2  Torgersen           52
+>>> penguins.groupby(["species", "island"]).count("rowid")
+     species     island  count_rowid
+0     Adelie     Biscoe           44
+1     Adelie      Dream           56
+2     Adelie  Torgersen           52
+3  Chinstrap      Dream           68
+4     Gentoo     Biscoe          124
+>>> penguins.groupby(["island"]).sum("body_mass_g")
+      island  sum_body_mass_g
+0     Biscoe         787575.0
+1      Dream         460400.0
+2  Torgersen         189025.0
+>>> penguins.groupby(["island"]).min("body_mass_g")
+      island  min_body_mass_g
+0     Biscoe           2850.0
+1      Dream           2700.0
+2  Torgersen           2900.0
+>>> penguins.groupby(["island"]).max("body_mass_g")
+      island  max_body_mass_g
+0     Biscoe           6300.0
+1      Dream           4800.0
+2  Torgersen           4700.0
+>>> penguins.groupby(["island"]).mean("body_mass_g")
+      island  mean_body_mass_g
+0     Biscoe       4716.017964
+1      Dream       3712.903226
+2  Torgersen       3706.372549
+>>> penguins.groupby(["island"]).avg("body_mass_g")
+      island  avg_body_mass_g
+0     Biscoe      4716.017964
+1      Dream      3712.903226
+2  Torgersen      3706.372549
+>>> penguins.groupby(["island"]).median("body_mass_g")
+      island  median_body_mass_g
+0     Biscoe              4775.0
+1      Dream              3687.5
+2  Torgersen              3700.0
 ```

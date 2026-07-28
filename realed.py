@@ -41,7 +41,7 @@ class Relation(pd.DataFrame):
         """Return the dimensions (rows x columns) of the relation"""
         return len(self), len(self.columns)
 
-    def select(self, expr: str) -> "Relation":
+    def query(self, expr: str) -> "Relation":  # type: ignore
         """Selection operation of the relational algebra
 
         :param expr: query string
@@ -49,13 +49,13 @@ class Relation(pd.DataFrame):
         """
         return Relation(super().query(expr).drop_duplicates())
 
-    def query(self, expr: str) -> "Relation":  # type: ignore
+    def select(self, expr: str) -> "Relation":
         """Selection operation of the relational algebra
 
         :param expr: query string
         :return: a new relation
         """
-        return self.select(expr)
+        return self.query(expr)
 
     def project(self, attributes: list[str]) -> "Relation":
         """Projection operation of the relational algebra
@@ -164,7 +164,7 @@ class Relation(pd.DataFrame):
 
 
 def main():
-    r = Relation("menagerie.csv")
+    r = Relation("palmerpenguins.csv")
     print(r)
 
 
