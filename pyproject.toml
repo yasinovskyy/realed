@@ -1,0 +1,10 @@
+[project]
+dependencies    = [
+    "numpy==2.3.5",
+    "pandas>=3.0.5",
+]
+description     = "Relational Algebra for Educational purposes"
+name            = "realed"
+readme          = "README.md"
+requires-python = ">=3.12"
+version         = "2026.7"
