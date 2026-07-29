@@ -2,13 +2,19 @@
 
 A simple wrapper around `pandas` to demonstrate common relational algebra operations:
 
-- selection
-- projection
-- renaming
-- extending
-- sorting
-- grouping
-- joining relations
+- Selection (`select`)
+- Projection (`project`)
+- Renaming (`rename`)
+- Extending (`extend`)
+- Sorting (`sort`)
+- Grouping (`groupby`)
+- Cartesian product (`product`)
+- Concatenation (`union`)
+- Natural join (`njoin`)
+- Equijoin (`ejoin`)
+- Semijoin (`sjoin`)
+- Antijoin (`ajoin`)
+- Outer join (`ojoin`)
 
 ## Initialization
 
@@ -31,9 +37,8 @@ A simple wrapper around `pandas` to demonstrate common relational algebra operat
 >>>
 ```
 
-## Selection
+## Selection (`select`)
 
-Both `select` and `query` filter records by some criteria.
 The query expression is parsed by `pandas`.
 
 ```python
@@ -75,7 +80,7 @@ Since each operation return a `Relation`, operations can be chained:
 129    130  Adelie  Torgersen            44.1           18.0              210.0       4000.0  male  2009
 ```
 
-## Projection
+## Projection (`project`)
 
 ```python
 >>> from realed import Relation
@@ -90,7 +95,7 @@ Since each operation return a `Relation`, operations can be chained:
 >>>
 ```
 
-## Renaming
+## Renaming (`rename`)
 
 ```python
 
@@ -104,7 +109,7 @@ Since each operation return a `Relation`, operations can be chained:
 >>>
 ```
 
-## Sorting
+## Sorting (`sort`)
 
 ```python
 >>> from realed import Relation
@@ -144,7 +149,7 @@ Be mindful of the order of sorting operations.
 ```
 
 
-## Extending
+## Extending (`extend`)
 
 ```python
 >>> from realed import Relation
@@ -165,7 +170,7 @@ Be mindful of the order of sorting operations.
 >>>
 ```
 
-## Grouping and aggregation
+## Grouping (`groupby`) and aggregation
 
 ```python
 >>> from realed import Relation
@@ -218,3 +223,17 @@ Be mindful of the order of sorting operations.
 1      Dream              3687.5
 2  Torgersen              3700.0
 ```
+
+## Cartesian product (`product`)
+
+## Concatenation (`union`)
+
+## Natural join (`naturaljoin` or `njoin`)
+
+## Equijoin (`equijoin` or `ejoin`)
+
+## Semijoin (`semijoin` or `sjoin`)
+
+## Antijoin (`antijoin` or `ajoin`)
+
+## Outer join (`outerjoin` or `ojoin`)
