@@ -1,4 +1,7 @@
-"id","island","surveyed","explorer"
-1,"Biscoe",1832,"John Biscoe"
-2,"Dream",1956,"British Naval Hydrographic Survey Unit"
-3,"Torgersen",1955,"Falkland Islands Dependencies Survey"
+id,island,explored,expedition,name_origin
+1,Amsler,1955,Falkland Islands Dependencies Survey,Margaret Amsler
+2,Anvers,1832,Southern Ocean Expedition,Antwerp province
+3,Biscoe,1832,Southern Ocean Expedition,John Biscoe
+4,Christiania,1898,Belgian Antarctic Expedition,Oslo
+5,Dream,1956,British Naval Hydrographic Survey Unit,Natural features
+6,Torgersen,1955,Falkland Islands Dependencies Survey,Torstein Torgersen
