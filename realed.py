@@ -11,14 +11,10 @@ import pathlib
 import pandas as pd
 
 
-class Relation(pd.DataFrame):
+class Relation:
     """Relation that stores tabular data"""
 
-    @property
-    def _constructor(self):
-        return Relation
-
-    def __init__(self, data_src: str | pd.DataFrame | None, *args, **kwargs):
+    def __init__(self, data_src: "str | Relation | pd.DataFrame | None", *args, **kwargs):
         """Create a new relation either from a CSV file or from another Relation
 
         :param data: data source
@@ -28,29 +24,107 @@ class Relation(pd.DataFrame):
         if isinstance(data_src, str) and pathlib.Path(data_src).suffix == ".csv":
             if not pathlib.Path(data_src).exists():
                 raise FileNotFoundError(f"Check the path to {data_src}.")
-            super().__init__(pd.read_csv(data_src), *args, **kwargs)  # type: ignore
+            self._data = pd.DataFrame(pd.read_csv(data_src, *args, **kwargs))
         elif isinstance(data_src, (pd.DataFrame, Relation)):
-            super().__init__(data_src, *args, **kwargs)  # type: ignore
+            self._data = data_src.copy().drop_duplicates()
         elif data_src is None:
-            raise ValueError("A relation can only be created from a valid source.")
+            raise ValueError(
+                "A relation can only be created from a valid source but none was provided."
+            )
         else:
-            raise TypeError(f"Unknown data source: {data_src}")
+            raise TypeError(
+                f"A relation can not be created from the provided data source >>{data_src}<<."
+            )
+
+    @property
+    def data(self):
+        """Data as a property"""
+        return self._data
+
+    @property
+    def columns(self):
+        """Names of the attributes"""
+        return self._data.columns
 
     @property
     def dim(self):
-        """Return the dimensions (rows x columns) of the relation"""
-        return len(self), len(self.columns)
+        """Return dimensions (rows x columns) of the relation"""
+        return len(self._data), len(self._data.columns)
 
     @property
-    def first(self):
-        """Return the first record of the relation"""
-        if len(self) == 0:
+    def one(self) -> dict:
+        """Return one (first) record of the relation"""
+        if len(self._data) == 0:
             raise ValueError("The relation is empty")
-        return self.iloc[0].to_dict()
+        return self._data.iloc[0].to_dict()
+
+    def __getitem__(self, key):
+        """Allow getting a specific attribute"""
+        return self._data[key]
+
+    def __setitem__(self, key, value) -> None:
+        """Allow setting a specific attribute"""
+        self._data[key] = value
+
+    def __bool__(self) -> bool:
+        """Evaluate the relation as a boolean"""
+        return bool(self._data)
+
+    def __repr__(self) -> str:
+        """Represent the relation"""
+        return repr(self._data)
+
+    def __str__(self) -> str:
+        """Convert the relation to a string"""
+        return str(self._data)
+
+    def __len__(self) -> int:
+        """Get the length of the relation"""
+        return len(self._data)
+
+    def __add__(self, other) -> "Relation":
+        """Add two relations"""
+        return self.union(other)
+
+    def __sub__(self, other) -> "Relation":
+        """Subtract two relations"""
+        return self.minus(other)
+
+    def __mul__(self, other) -> "Relation":
+        """Multiply two relations"""
+        return self.product(other)
+
+    def to_csv(self, filepath):
+        """Save the relation to a CSV file"""
+        self._data.to_csv(filepath, index=False)
+
+    def copy(self):
+        """Return a deep copy of the relation"""
+        return self._data.copy()
 
     def cleanup(self):
         """Remove empty (all NA) records from the relation"""
-        return Relation(self.dropna(how="all"))
+        return Relation(self._data.dropna(how="all"))
+
+    def equals(self, other) -> bool:
+        """Compare two relations for equality"""
+        return self._data.equals(other.data)
+
+    def minus(self, other) -> "Relation":
+        """Find the difference between two relations"""
+        if not isinstance(other, Relation):
+            raise TypeError("Can only find the difference between two relations.")
+        return Relation(self._data[~self._data.isin(other.data)]).cleanup()
+
+    def intersection(self, other):
+        """Find the intersection of two relations"""
+        if not isinstance(other, Relation):
+            raise TypeError("Can only find the intersection of two relations.")
+        return Relation(self._data[self._data.isin(other.data)]).cleanup()
+
+    def query(self, expr, *args, **kwargs):
+        """A simple pass-through to the pandas query"""
+        return Relation(self._data.query(expr, *args, **kwargs))
 
     def select(self, expr: str) -> "Relation":
         """Selection operation of the relational algebra
@@ -58,7 +132,7 @@ class Relation(pd.DataFrame):
         :param expr: query string
         :return: a new relation
         """
-        return Relation(super().query(expr).drop_duplicates())
+        return Relation(self._data.query(expr))
 
     def project(self, attributes: list[str]) -> "Relation":
         """Projection operation of the relational algebra
@@ -70,23 +144,27 @@ class Relation(pd.DataFrame):
         """
         if not isinstance(attributes, list):
             raise TypeError("Projection uses a list of attributes as an argument.")
-        missing_attributes = set(attributes).difference(set(self.columns))
+        missing_attributes = set(attributes).difference(set(self._data.columns))
         if len(missing_attributes) > 0:
             raise ValueError(
-                f"There are no attributes {', '.join(sorted(missing_attributes))} in this relation"
+                f"There are no attributes >>{', '.join(sorted(missing_attributes))}<< in this relation."
             )
-        return Relation(self[attributes].drop_duplicates())
+        return Relation(self._data[attributes])
 
-    def rename(self, old_name: str, new_name: str) -> "Relation":  # type: ignore
+    def rename(self, old_name: str, new_name: str) -> "Relation":
         """Rename operation of the relational algebra
 
         :param old_name: old name of an attribute
         :param new_name: new name of an attribute
+        :raises ValueError: if the old name is not a valid column name
+        :raises ValueError: if the new name is a name of an existing attribute
         :return: a new relation
         """
-        if old_name not in self.columns:
-            raise ValueError(f"There is no attribute {old_name} in this relation")
-        return Relation(super().rename(columns={old_name: new_name}).drop_duplicates())
+        if old_name not in self._data.columns:
+            raise ValueError(f"There is no attribute >>{old_name}<< in this relation.")
+        if new_name in self._data.columns:
+            raise ValueError(f"There is already an attribute >>{new_name}<< in this relation.")
+        return Relation(self._data.rename(columns={old_name: new_name}))
 
     def sort(self, attributes: list[str], *args, **kwargs) -> "Relation":
         """Sorting operation of the relational algebra
@@ -95,71 +173,82 @@ class Relation(pd.DataFrame):
         :param ascending: default True
         :return: a new relation
         """
-        return Relation(super().sort_values(attributes, *args, **kwargs))
+        return Relation(self._data.sort_values(attributes, *args, **kwargs))
 
     def extend(self, new_attribute: str, new_values: pd.Series) -> "Relation":
         """Extending operation of the relational algebra
 
         :param new_attribute: name of the new attribute
         :param new_values: series of values
+        :raises ValueError: if the new name is a name of an existing attribute
         :return: a new relation
         """
-        new_relation = Relation(self)
-        new_relation[new_attribute] = new_values
-        return new_relation.drop_duplicates()
+        if new_attribute in self._data.columns:
+            raise ValueError(f"There is already an attribute >>{new_attribute}<< in this relation.")
+        new_values.name = new_attribute
+        return Relation(pd.concat([self._data, new_values], axis=1))
 
-    def groupby(self, attributes: list[str]) -> "RelationGroupBy":  # type: ignore
+    def groupby(self, attributes: list[str]) -> "RelationGroupBy":
         """GroupBy operation of the relational algebra
 
         :param query: attributes to group by
         :return: a new relation group by object
 
         """
-        return self.RelationGroupBy(super().groupby(attributes))
+        return self.RelationGroupBy(self._data.groupby(attributes), attributes)
 
-    class RelationGroupBy(pd.api.typing.DataFrameGroupBy):
+    class RelationGroupBy:
         """An intermediate grouping object"""
 
-        def __init__(self, grouping: pd.api.typing.DataFrameGroupBy):
+        def __init__(self, grouping: pd.api.typing.DataFrameGroupBy, attributes: list[str]):
             self.grouping = grouping
+            self.attributes = attributes
 
-        def count(self, attribute: str):  # type: ignore
+        def __repr__(self):
+            """Represent the grouping"""
+            return str(pd.DataFrame(list(self.grouping.groups.keys()), columns=self.attributes))
+
+        def __str__(self):
+            """Convert the grouping to a string"""
+            return str(pd.DataFrame(list(self.grouping.groups.keys()), columns=self.attributes))
+
+        def count(self, attribute: str):
             """Compute count of group"""
             return Relation(
                 self.grouping[attribute].count().to_frame(name=f"count_{attribute}").reset_index()
             )
 
-        def sum(self, attribute: str):  # type: ignore
+        def sum(self, attribute: str):
             """Compute sum of group values"""
             return Relation(
                 self.grouping[attribute].sum().to_frame(name=f"sum_{attribute}").reset_index()
             )
 
-        def min(self, attribute: str):  # type: ignore
+        def min(self, attribute: str):
             """Compute min of group values"""
             return Relation(
                 self.grouping[attribute].min().to_frame(name=f"min_{attribute}").reset_index()
             )
 
-        def max(self, attribute: str):  # type: ignore
+        def max(self, attribute: str):
             """Compute max of group values"""
             return Relation(
                 self.grouping[attribute].max().to_frame(name=f"max_{attribute}").reset_index()
             )
 
-        def avg(self, attribute: str):  # type: ignore
+        def avg(self, attribute: str):
             """Compute average of group values"""
             return Relation(
                 self.grouping[attribute].mean().to_frame(name=f"avg_{attribute}").reset_index()
             )
 
-        def mean(self, attribute: str):  # type: ignore
+        def mean(self, attribute: str):
             """Compute mean of group values"""
             return Relation(
                 self.grouping[attribute].mean().to_frame(name=f"mean_{attribute}").reset_index()
             )
 
-        def median(self, attribute: str):  # type: ignore
+        def median(self, attribute: str):
             """Compute median of group values"""
             return Relation(
                 self.grouping[attribute].median().to_frame(name=f"median_{attribute}").reset_index()
@@ -170,6 +259,7 @@ class Relation(pd.DataFrame):
 
         :param other: another relation
         :raises TypeError: if the argument is not a relation
+        :raises ValueError: if the attributes are not disjoint
         :return: a new relation
         """
         if not isinstance(other, Relation):
@@ -178,7 +268,7 @@ class Relation(pd.DataFrame):
             raise ValueError(
                 "Two relations must have disjoint attributes for cartesian product to work."
             )
-        return Relation(self.merge(other, how="cross").drop_duplicates())
+        return Relation(self._data.merge(other.data, how="cross"))
 
     def union(self, other: "Relation") -> "Relation":
         """Union operation of the relational algebra
@@ -192,13 +282,14 @@ class Relation(pd.DataFrame):
             raise TypeError("Can only find a union of two relations.")
         if not self.columns.equals(other.columns):
             raise ValueError("Names of the attributes must be the same in both relations.")
-        return Relation(pd.concat([self, other]).drop_duplicates())
+        return Relation(pd.concat([self._data, other.data]))
 
-    def naturaljoin(self, other: "Relation") -> "Relation":  # type: ignore
+    def naturaljoin(self, other: "Relation") -> "Relation":
         """Natural join operation of the relational algebra
 
         :param other: another relation
         :raises TypeError: if the argument is not a relation
+        :raises TypeError: if either of the provided attributes is not a string
         :raises ValueError: if there are no matching attributes
         :return: a new relation
         :alias: njoin
@@ -207,17 +298,18 @@ class Relation(pd.DataFrame):
             raise TypeError("Can only join two relations.")
         if not set(self.columns).intersection(set(other.columns)):
             raise ValueError("There are no common attributes between these relations to join them.")
-        return Relation(self.merge(other, how="inner").drop_duplicates())
+        return Relation(self._data.merge(other.data, how="inner"))
 
     njoin = naturaljoin
 
-    def equijoin(self, other: "Relation", left_attrib, right_attrib) -> "Relation":  # type: ignore
+    def equijoin(self, other: "Relation", left_attrib: str, right_attrib: str) -> "Relation":
         """Equijoin operation of the relational algebra
 
         :param other: another relation
         :param left_attrib: attribute in the left relation
         :param right_attrib: attribute in the right relation
         :raises TypeError: if the argument is not a relation
+        :raises TypeError: if either of the provided attributes is not a string
         :raises ValueError: if the provided left attribute is not found in the left relation
         :raises ValueError: if the provided right attribute is not found in the right relation
         :return: a new relation
@@ -225,25 +317,28 @@ class Relation(pd.DataFrame):
         """
         if not isinstance(other, Relation):
             raise TypeError("Can only join two relations.")
+        if not isinstance(left_attrib, str) or not isinstance(right_attrib, str):
+            raise TypeError("Attributes must be strings.")
         if left_attrib not in self.columns:
-            raise ValueError(f"There is no attribute {left_attrib} in the left relation.")
+            raise ValueError(f"There is no attribute >>{left_attrib}<< in the left relation.")
         if right_attrib not in other.columns:
-            raise ValueError(f"There is no attribute {right_attrib} in the right relation.")
+            raise ValueError(f"There is no attribute >>{right_attrib}<< in the right relation.")
         return Relation(
-            self.merge(
-                other, how="inner", left_on=left_attrib, right_on=right_attrib
-            ).drop_duplicates()
+            self._data.merge(
+                other.data, how="inner", left_on=left_attrib, right_on=right_attrib
+            )
         )
 
     ejoin = equijoin
 
-    def semijoin(self, other: "Relation", left_attrib, right_attrib) -> "Relation":  # type: ignore
+    def semijoin(self, other: "Relation", left_attrib: str, right_attrib: str) -> "Relation":
         """Semijoin operation of the relational algebra
 
         :param other: another relation
         :param left_attrib: attribute in the left relation
         :param right_attrib: attribute in the right relation
         :raises TypeError: if the argument is not a relation
+        :raises TypeError: if either of the provided attributes is not a string
         :raises ValueError: if the provided left attribute is not found in the left relation
         :raises ValueError: if the provided right attribute is not found in the right relation
         :return: a new relation
@@ -251,33 +346,36 @@ class Relation(pd.DataFrame):
         """
         if not isinstance(other, Relation):
             raise TypeError("Can only join two relations.")
+        if not isinstance(left_attrib, str) or not isinstance(right_attrib, str):
+            raise TypeError("Attributes must be strings.")
         if left_attrib not in self.columns:
-            raise ValueError(f"There is no attribute {left_attrib} in the left relation.")
+            raise ValueError(f"There is no attribute >>{left_attrib}<< in the left relation.")
         if right_attrib not in other.columns:
-            raise ValueError(f"There is no attribute {right_attrib} in the right relation.")
-        return Relation(self[self[left_attrib].isin(other[right_attrib])].drop_duplicates())
+            raise ValueError(f"There is no attribute >>{right_attrib}<< in the right relation.")
+        return Relation(self[self[left_attrib].isin(other[right_attrib])])
 
     sjoin = semijoin
 
-    def antijoin(self, other: "Relation", left_attrib, right_attrib) -> "Relation":  # type: ignore
+    def antijoin(self, other: "Relation", left_attrib: str, right_attrib: str) -> "Relation":
         """Antijoin operation of the relational algebra
 
         :param other: another relation
         :param left_attrib: attribute in the left relation
         :param right_attrib: attribute in the right relation
         :raises TypeError: if the argument is not a relation
-        :raises ValueError: if the provided left attribute is not found in the left relation
-        :raises ValueError: if the provided right attribute is not found in the right relation
+        :raises TypeError: if either of the provided attributes is not a string
         :return: a new relation
         :alias: ajoin
         """
         if not isinstance(other, Relation):
             raise TypeError("Can only join two relations.")
-        return Relation(self[~self[left_attrib].isin(other[right_attrib])].drop_duplicates())
+        if not isinstance(left_attrib, str) or not isinstance(right_attrib, str):
+            raise TypeError("Attributes must be strings.")
+        return Relation(self[~self[left_attrib].isin(other[right_attrib])])
 
     ajoin = antijoin
 
-    def outerjoin(self, other: "Relation") -> "Relation":  # type: ignore
+    def outerjoin(self, other: "Relation") -> "Relation":
         """Full outer join operation of the relational algebra
 
         :param other: another relation
@@ -291,16 +389,6 @@ class Relation(pd.DataFrame):
         """
         if not isinstance(other, Relation):
             raise TypeError("Can only join two relations.")
-        return Relation(self.merge(other, how="outer").drop_duplicates())
+        return Relation(self._data.merge(other.data, how="outer"))
 
     ojoin = outerjoin
-
-    def minus(self, other):
-        if not isinstance(other, Relation):
-            raise TypeError("Can only find the difference of two relations.")
-        return Relation(self[~self.isin(other)]).cleanup()
-
-    def intersection(self, other):
-        if not isinstance(other, Relation):
-            raise TypeError("Can only find the intersection of two relations.")
-        return Relation(self[self.isin(other)].cleanup())

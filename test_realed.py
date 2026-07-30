@@ -71,8 +71,8 @@ class TestOperationSort(unittest.TestCase):
         r = Relation("palmerpenguins.csv")
         self.assertEqual(r.sort(["body_mass_g"]).dim, (344, 9))
         self.assertEqual(r.sort(["body_mass_g"], ascending=False).sort(["species"]).dim, (344, 9))
-        self.assertEqual(r.sort(["body_mass_g"]).first["rowid"], 315)
-        self.assertEqual(r.sort(["body_mass_g"], ascending=False).first["rowid"], 170)
+        self.assertEqual(r.sort(["body_mass_g"]).one["rowid"], 315)
+        self.assertEqual(r.sort(["body_mass_g"], ascending=False).one["rowid"], 170)
 
     @unittest.expectedFailure
     def test_sort_error(self):
@@ -83,7 +83,7 @@ class TestOperationSort(unittest.TestCase):
 class TestOperationExtend(unittest.TestCase):
     def test_extend(self):
         r = Relation("palmerpenguins.csv")
-        self.assertEqual(r.extend("year_since_found", 2026 - r.year).dim, (344, 10))
+        self.assertEqual(r.extend("year_since_found", 2026 - r["year"]).dim, (344, 10))
 
 
 class TestOperationGroupBy(unittest.TestCase):
@@ -108,8 +108,8 @@ class TestOperationProduct(unittest.TestCase):
     def test_product(self):
         r1 = Relation("palmerpenguins.csv")
         r2 = Relation("palmerislands.csv")
-        self.assertEqual(r1.product(r2.rename("island", "island_name")).dim, (1032, 13))
-        self.assertEqual(r2.product(r1.rename("island", "island_name")).dim, (1032, 13))
+        self.assertEqual(r1.product(r2.rename("island", "island_name")).dim, (2064, 14))
+        self.assertEqual(r2.product(r1.rename("island", "island_name")).dim, (2064, 14))
 
     @unittest.expectedFailure
     def test_product_error(self):
@@ -138,8 +138,8 @@ class TestOperationNaturalJoin(unittest.TestCase):
     def test_njoin(self):
         r1 = Relation("palmerpenguins.csv")
         r2 = Relation("palmerislands.csv")
-        self.assertEqual(r1.njoin(r2).dim, (344, 12))
-        self.assertEqual(r2.njoin(r1).dim, (344, 12))
+        self.assertEqual(r1.njoin(r2).dim, (344, 13))
+        self.assertEqual(r2.njoin(r1).dim, (344, 13))
 
     @unittest.expectedFailure
     def test_njoin_error(self):
@@ -152,8 +152,8 @@ class TestOperationEquiJoin(unittest.TestCase):
     def test_ejoin(self):
         r1 = Relation("palmerpenguins.csv")
         r2 = Relation("palmerislands.csv").rename("island", "location")
-        self.assertEqual(r1.ejoin(r2, "island", "location").dim, (344, 13))
-        self.assertEqual(r2.ejoin(r1, "location", "island").dim, (344, 13))
+        self.assertEqual(r1.ejoin(r2, "island", "location").dim, (344, 14))
+        self.assertEqual(r2.ejoin(r1, "location", "island").dim, (344, 14))
 
     @unittest.expectedFailure
     def test_ejoin_error(self):
@@ -167,7 +167,7 @@ class TestOperationSemiJoin(unittest.TestCase):
         r1 = Relation("palmerpenguins.csv")
         r2 = Relation("palmerislands.csv")
         self.assertEqual(r1.sjoin(r2, "island", "island").dim, (344, 9))
-        self.assertEqual(r2.sjoin(r1, "island", "island").dim, (3, 4))
+        self.assertEqual(r2.sjoin(r1, "island", "island").dim, (3, 5))
 
     @unittest.expectedFailure
     def test_sjoin_error(self):
@@ -182,8 +182,8 @@ class TestOperationAntiJoin(unittest.TestCase):
         r2 = Relation("palmerislands.csv").select("island == 'Torgersen'")
         r3 = Relation("palmerislands.csv")
         self.assertEqual(r1.ajoin(r2, "island", "island").dim, (124, 9))
-        self.assertEqual(r2.ajoin(r1, "island", "island").dim, (1, 4))
-        self.assertEqual(r3.ajoin(r1, "island", "island").dim, (2, 4))
+        self.assertEqual(r2.ajoin(r1, "island", "island").dim, (1, 5))
+        self.assertEqual(r3.ajoin(r1, "island", "island").dim, (5, 5))
 
     @unittest.expectedFailure
     def test_ajoin_error(self):
@@ -197,9 +197,9 @@ class TestOperationOuterJoin(unittest.TestCase):
         r1 = Relation("palmerpenguins.csv").select("species == 'Gentoo'")
         r2 = Relation("palmerislands.csv").select("island == 'Torgersen'")
         r3 = Relation("palmerislands.csv")
-        self.assertEqual(r1.ojoin(r2).dim, (125, 12))
-        self.assertEqual(r2.ojoin(r1).dim, (125, 12))
-        self.assertEqual(r3.ojoin(r1).dim, (126, 12))
+        self.assertEqual(r1.ojoin(r2).dim, (125, 13))
+        self.assertEqual(r2.ojoin(r1).dim, (125, 13))
+        self.assertEqual(r3.ojoin(r1).dim, (129, 13))
 
 
 class TestOperationMinus(unittest.TestCase):
