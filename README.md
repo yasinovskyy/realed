@@ -73,6 +73,8 @@ Certain helper methods and properties are available:
 - property `columns`: names of the attributes
 - property `dim`: dimensions of the relation (rows, columns)
 - property `one`: the first record of the relation as a dictionary
+- method `head`: return the first couple of records
+- method `tail`: return the last couple of records
 - method `to_csv`: export the `data` to a csv file
 - method `copy`: deep copy of the `data`
 - method `cleanup`: removal of empty records

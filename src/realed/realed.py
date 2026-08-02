@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 """
 Implementation of relational algebra operations using pandas
-
-@author: Roman Yasinovskyy
-@version: 2026.7
 """
 
 import pathlib
@@ -14,7 +11,9 @@ import pandas as pd
 class Relation:
     """Relation that stores tabular data"""
 
-    def __init__(self, data_src: "str | Relation | pd.DataFrame | None", *args, **kwargs):
+    def __init__(
+        self, data_src: "str | pathlib.Path | Relation | pd.DataFrame | None", *args, **kwargs
+    ):
         """Create a new relation either from a CSV file or from another Relation
 
         :param data: data source
@@ -23,6 +22,10 @@ class Relation:
         """
         if isinstance(data_src, str) and pathlib.Path(data_src).suffix == ".csv":
             if not pathlib.Path(data_src).exists():
+                raise FileNotFoundError(f"Check the path to {data_src}.")
+            self._data = pd.DataFrame(pd.read_csv(data_src, *args, **kwargs))
+        elif isinstance(data_src, pathlib.Path) and data_src.suffix == ".csv":
+            if not data_src.exists():
                 raise FileNotFoundError(f"Check the path to {data_src}.")
             self._data = pd.DataFrame(pd.read_csv(data_src, *args, **kwargs))
         elif isinstance(data_src, (pd.DataFrame, Relation)):
@@ -93,6 +96,14 @@ class Relation:
     def __mul__(self, other) -> "Relation":
         """Multiply two relations"""
         return self.product(other)
+
+    def head(self, n: int = 5):
+        """Return the first couple records"""
+        return self._data.head(n)
+
+    def tail(self, n: int = 5):
+        """Return the last couple records"""
+        return self._data.tail(n)
 
     def to_csv(self, filepath):
         """Save the relation to a CSV file"""
@@ -192,9 +203,12 @@ class Relation:
         """GroupBy operation of the relational algebra
 
         :param query: attributes to group by
+        :raises TypeError: if the argument is not a list
         :return: a new relation group by object
 
         """
+        if not isinstance(attributes, list):
+            raise TypeError("Grouping uses a list of attributes as an argument.")
         return self.RelationGroupBy(self._data.groupby(attributes), attributes)
 
     class RelationGroupBy:
@@ -324,9 +338,7 @@ class Relation:
         if right_attrib not in other.columns:
             raise ValueError(f"There is no attribute >>{right_attrib}<< in the right relation.")
         return Relation(
-            self._data.merge(
-                other.data, how="inner", left_on=left_attrib, right_on=right_attrib
-            )
+            self._data.merge(other.data, how="inner", left_on=left_attrib, right_on=right_attrib)
         )
 
     ejoin = equijoin

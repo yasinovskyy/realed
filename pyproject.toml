@@ -1,7 +1,36 @@
 [project]
-dependencies    = ["numpy>=2.5.0", "pandas>=3.0.5"]
-description     = "Relational Algebra for Educational purposes"
-name            = "realed"
-readme          = "README.md"
+authors = [{ name = "Roman Yasinovskyy", email = "yasinovskyy@gmail.com" }]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Education",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Education",
+]
+dependencies = ["numpy>=2.5.0", "pandas>=3.0.5"]
+description = "Relational Algebra for Educational purposes"
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
+name = "realed"
+readme = "README.md"
 requires-python = ">=3.12"
-version         = "2026.7"
+version = "2026.8"
+
+[project.urls]
+Homepage = "https://github.com/yasinovskyy/realed"
+Issues   = "https://github.com/yasinovskyy/realed/issues"
+
+[build-system]
+build-backend = "uv_build"
+requires      = ["uv_build >= 0.12.0, <0.13.0"]
+
+[tool.uv.build-backend]
+module-name = "realed"
+module-root = "src"
+
+[dependency-groups]
+dev = [
+    "ipykernel>=7.3.0",
+]
