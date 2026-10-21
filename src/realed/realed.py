@@ -23,11 +23,19 @@ class Relation:
         if isinstance(data_src, str) and pathlib.Path(data_src).suffix == ".csv":
             if not pathlib.Path(data_src).exists():
                 raise FileNotFoundError(f"Check the path to {data_src}.")
-            self._data = pd.DataFrame(pd.read_csv(data_src, *args, **kwargs))
+            data = pd.read_csv(data_src, *args, **kwargs)
+            if isinstance(data, pd.DataFrame):
+                self._data = data
+            else:  # TextFileReader
+                self._data = pd.concat([chunk for chunk in data], ignore_index=True)
         elif isinstance(data_src, pathlib.Path) and data_src.suffix == ".csv":
             if not data_src.exists():
                 raise FileNotFoundError(f"Check the path to {data_src}.")
-            self._data = pd.DataFrame(pd.read_csv(data_src, *args, **kwargs))
+            data = pd.read_csv(data_src, *args, **kwargs)
+            if isinstance(data, pd.DataFrame):
+                self._data = data
+            else:  # TextFileReader
+                self._data = pd.concat([chunk for chunk in data], ignore_index=True)
         elif isinstance(data_src, (pd.DataFrame, Relation)):
             self._data = data_src.copy().drop_duplicates()
         elif data_src is None:
@@ -105,7 +113,7 @@ class Relation:
         """Return the last couple records"""
         return self._data.tail(n)
 
-    def to_csv(self, filepath):
+    def to_csv(self, filepath: str | pathlib.Path):
         """Save the relation to a CSV file"""
         self._data.to_csv(filepath, index=False)
 
@@ -117,17 +125,17 @@ class Relation:
         """Remove empty (all NA) records from the relation"""
         return Relation(self._data.dropna(how="all"))
 
-    def equals(self, other) -> bool:
+    def equals(self, other: "Relation") -> bool:
         """Compare two relations for equality"""
         return self._data.equals(other.data)
 
-    def minus(self, other) -> "Relation":
+    def minus(self, other: "Relation") -> "Relation":
         """Find the difference between two relations"""
         if not isinstance(other, Relation):
             raise TypeError("Can only find the difference between two relations.")
         return Relation(self._data[~self._data.isin(other.data)]).cleanup()
 
-    def intersection(self, other):
+    def intersection(self, other: "Relation"):
         """Find the intersection of two relations"""
         if not isinstance(other, Relation):
             raise TypeError("Can only find the intersection of two relations.")
