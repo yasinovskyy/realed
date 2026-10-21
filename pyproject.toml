@@ -16,7 +16,7 @@ license-files = ["LICEN[CS]E*"]
 name = "realed"
 readme = "README.md"
 requires-python = ">=3.12"
-version = "2026.8"
+version = "2026.10"
 
 [project.urls]
 Homepage = "https://github.com/yasinovskyy/realed"
@@ -31,6 +31,4 @@ module-name = "realed"
 module-root = "src"
 
 [dependency-groups]
-dev = [
-    "ipykernel>=7.3.0",
-]
+dev = ["ipykernel>=7.3.0"]
