@@ -36,8 +36,10 @@ class Relation:
                 self._data = data
             else:  # TextFileReader
                 self._data = pd.concat([chunk for chunk in data], ignore_index=True)
-        elif isinstance(data_src, (pd.DataFrame, Relation)):
+        elif isinstance(data_src, pd.DataFrame):
             self._data = data_src.copy().drop_duplicates()
+        elif isinstance(data_src, Relation):
+            self._data = data_src.data.copy().drop_duplicates()
         elif data_src is None:
             raise ValueError(
                 "A relation can only be created from a valid source but none was provided."
@@ -46,6 +48,7 @@ class Relation:
             raise TypeError(
                 f"A relation can not be created from the provided data source >>{data_src}<<."
             )
+        assert isinstance(self._data, pd.DataFrame)
 
     @property
     def data(self):
@@ -85,6 +88,10 @@ class Relation:
         """Represent the relation"""
         return repr(self._data)
 
+    def _repr_html_(self) -> str:
+        """Represent the relation as an HTML table"""
+        return self._data._repr_html_()
+
     def __str__(self) -> str:
         """Convert the relation to a string"""
         return str(self._data)
@@ -105,25 +112,33 @@ class Relation:
         """Multiply two relations"""
         return self.product(other)
 
-    def head(self, n: int = 5):
+    def head(self, n: int = 5) -> "Relation":
         """Return the first couple records"""
-        return self._data.head(n)
+        return Relation(self._data.head(n))
 
-    def tail(self, n: int = 5):
+    def tail(self, n: int = 5) -> "Relation":
         """Return the last couple records"""
-        return self._data.tail(n)
+        return Relation(self._data.tail(n))
 
     def to_csv(self, filepath: str | pathlib.Path):
         """Save the relation to a CSV file"""
         self._data.to_csv(filepath, index=False)
 
-    def copy(self):
+    def to_html(self) -> str:
+        """Represent the relation as an HTML table"""
+        return self._data.to_html()
+
+    def copy(self) -> "Relation":
         """Return a deep copy of the relation"""
-        return self._data.copy()
+        return Relation(self._data.copy())
 
     def cleanup(self):
         """Remove empty (all NA) records from the relation"""
         return Relation(self._data.dropna(how="all"))
+
+    def drop_duplicates(self) -> "Relation":
+        """Remove duplicate records from the relation"""
+        return Relation(self._data.drop_duplicates())
 
     def equals(self, other: "Relation") -> bool:
         """Compare two relations for equality"""
@@ -135,13 +150,13 @@ class Relation:
             raise TypeError("Can only find the difference between two relations.")
         return Relation(self._data[~self._data.isin(other.data)]).cleanup()
 
-    def intersection(self, other: "Relation"):
+    def intersection(self, other: "Relation") -> "Relation":
         """Find the intersection of two relations"""
         if not isinstance(other, Relation):
             raise TypeError("Can only find the intersection of two relations.")
         return Relation(self._data[self._data.isin(other.data)]).cleanup()
 
-    def query(self, expr, *args, **kwargs):
+    def query(self, expr, *args, **kwargs) -> "Relation":
         """A simple pass-through to the pandas query"""
         return Relation(self._data.query(expr, *args, **kwargs))
 
@@ -226,51 +241,51 @@ class Relation:
             self.grouping = grouping
             self.attributes = attributes
 
-        def __repr__(self):
+        def __repr__(self) -> str:
             """Represent the grouping"""
-            return str(pd.DataFrame(list(self.grouping.groups.keys()), columns=self.attributes))
+            return repr(pd.DataFrame(list(self.grouping.groups.keys()), columns=self.attributes))
 
-        def __str__(self):
+        def __str__(self) -> str:
             """Convert the grouping to a string"""
             return str(pd.DataFrame(list(self.grouping.groups.keys()), columns=self.attributes))
 
-        def count(self, attribute: str):
+        def count(self, attribute: str) -> "Relation":
             """Compute count of group"""
             return Relation(
                 self.grouping[attribute].count().to_frame(name=f"count_{attribute}").reset_index()
             )
 
-        def sum(self, attribute: str):
+        def sum(self, attribute: str) -> "Relation":
             """Compute sum of group values"""
             return Relation(
                 self.grouping[attribute].sum().to_frame(name=f"sum_{attribute}").reset_index()
             )
 
-        def min(self, attribute: str):
+        def min(self, attribute: str) -> "Relation":
             """Compute min of group values"""
             return Relation(
                 self.grouping[attribute].min().to_frame(name=f"min_{attribute}").reset_index()
             )
 
-        def max(self, attribute: str):
+        def max(self, attribute: str) -> "Relation":
             """Compute max of group values"""
             return Relation(
                 self.grouping[attribute].max().to_frame(name=f"max_{attribute}").reset_index()
             )
 
-        def avg(self, attribute: str):
+        def avg(self, attribute: str) -> "Relation":
             """Compute average of group values"""
             return Relation(
                 self.grouping[attribute].mean().to_frame(name=f"avg_{attribute}").reset_index()
             )
 
-        def mean(self, attribute: str):
+        def mean(self, attribute: str) -> "Relation":
             """Compute mean of group values"""
             return Relation(
                 self.grouping[attribute].mean().to_frame(name=f"mean_{attribute}").reset_index()
             )
 
-        def median(self, attribute: str):
+        def median(self, attribute: str) -> "Relation":
             """Compute median of group values"""
             return Relation(
                 self.grouping[attribute].median().to_frame(name=f"median_{attribute}").reset_index()

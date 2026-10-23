@@ -9,14 +9,14 @@ classifiers = [
     "Programming Language :: Python :: 3 :: Only",
     "Topic :: Education",
 ]
-dependencies = ["numpy>=2.5.0", "pandas>=3.0.5"]
+dependencies = ["numpy==2.5.0", "pandas==3.0.5"]
 description = "Relational Algebra for Educational purposes"
 license = "MIT"
 license-files = ["LICEN[CS]E*"]
 name = "realed"
 readme = "README.md"
 requires-python = ">=3.12"
-version = "2026.10"
+version = "2026.10.1"
 
 [project.urls]
 Homepage = "https://github.com/yasinovskyy/realed"
@@ -31,4 +31,4 @@ module-name = "realed"
 module-root = "src"
 
 [dependency-groups]
-dev = ["ipykernel>=7.3.0"]
+dev = ["ipykernel==7.3.0"]

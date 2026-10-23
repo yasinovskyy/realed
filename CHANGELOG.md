@@ -7,6 +7,18 @@ and this project adheres to [Calendar Versioning](https://calver.org/).
 
 ## [Unreleased]
 
+## 2026.10.1 - 2026-10-23
+
+### Added
+
+`_repr_html_` to make relations look like dataframes when rendered in notebooks.
+
+`drop_duplicates` as a pass-through to `pandas.DataFrame.drop_duplicates`
+
+## Fixed
+
+Relation representation in Jupyter notebooks.
+
 ## 2026.10 - 2026-10-21
 
 Update the Relation constructor to handle chunks.
@@ -39,4 +51,4 @@ Initial release.
 - Antijoin (`ajoin`)
 - Outer join (`ojoin`)
 
-[unreleased]: https://github.com/yasinovskyy/realed/compare/v2026.10...HEAD
+[unreleased]: https://github.com/yasinovskyy/realed/compare/v2026.10.1...HEAD
