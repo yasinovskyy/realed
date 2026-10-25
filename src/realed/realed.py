@@ -20,6 +20,7 @@ class Relation:
         :raises ValueError: if the source is empty
         :raises TypeError: if the source cannot be processed
         """
+        self._data: pd.DataFrame = pd.DataFrame()
         if isinstance(data_src, str) and pathlib.Path(data_src).suffix == ".csv":
             if not pathlib.Path(data_src).exists():
                 raise FileNotFoundError(f"Check the path to {data_src}.")
@@ -37,9 +38,9 @@ class Relation:
             else:  # TextFileReader
                 self._data = pd.concat([chunk for chunk in data], ignore_index=True)
         elif isinstance(data_src, pd.DataFrame):
-            self._data = data_src.copy().drop_duplicates()
+            self._data = data_src.drop_duplicates()
         elif isinstance(data_src, Relation):
-            self._data = data_src.data.copy().drop_duplicates()
+            self._data = data_src.data.drop_duplicates()
         elif data_src is None:
             raise ValueError(
                 "A relation can only be created from a valid source but none was provided."
@@ -90,7 +91,7 @@ class Relation:
 
     def _repr_html_(self) -> str:
         """Represent the relation as an HTML table"""
-        return self._data._repr_html_()
+        return self._data.to_html()
 
     def __str__(self) -> str:
         """Convert the relation to a string"""
@@ -140,9 +141,14 @@ class Relation:
         """Remove duplicate records from the relation"""
         return Relation(self._data.drop_duplicates())
 
-    def equals(self, other: "Relation") -> bool:
-        """Compare two relations for equality"""
-        return self._data.equals(other.data)
+    def equals(self, other: "Relation", exact: bool = False) -> bool:
+        """Compare two relations for equality
+
+        :param exact: consider index when comparing relations
+        """
+        if exact:
+            return self._data.equals(other.data)
+        return self._data.reset_index(drop=True).equals(other.data.reset_index(drop=True))
 
     def minus(self, other: "Relation") -> "Relation":
         """Find the difference between two relations"""

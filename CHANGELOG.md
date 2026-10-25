@@ -7,6 +7,14 @@ and this project adheres to [Calendar Versioning](https://calver.org/).
 
 ## [Unreleased]
 
+### Added
+
+`exact` parameter to `equals` to consider index when comparing relations
+
+## Fixed
+
+Invoke `pandas.DataFrame.to_html` instead of `pandas.DataFrame._repr_html_` when `Relation._repr_html_` is called.
+
 ## 2026.10.1 - 2026-10-23
 
 ### Added
