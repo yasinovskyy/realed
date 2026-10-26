@@ -69,4 +69,4 @@ Initial release.
 - Antijoin (`ajoin`)
 - Outer join (`ojoin`)
 
-[unreleased]: https://github.com/yasinovskyy/realed/compare/v2026.10.1...HEAD
+[unreleased]: https://github.com/yasinovskyy/realed/compare/v2026.10.3...HEAD
