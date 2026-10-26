@@ -89,13 +89,15 @@ class Relation:
         """Represent the relation"""
         return repr(self._data)
 
-    def _repr_html_(self) -> str:
+    def _repr_html_(self) -> str | None:
         """Represent the relation as an HTML table"""
-        return self._data.to_html()
+        if hasattr(self._data, "_repr_html_") and callable(self._data._repr_html_):
+            return self._data._repr_html_()
 
-    def _repr_latex_(self) -> str:
+    def _repr_latex_(self) -> str | None:
         """Represent the relation as LaTeX"""
-        return self._data.to_latex()
+        if hasattr(self._data, "_repr_latex_") and callable(self._data._repr_latex_):
+            return self._data._repr_latex_()
 
     def __str__(self) -> str:
         """Convert the relation to a string"""

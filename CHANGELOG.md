@@ -7,6 +7,13 @@ and this project adheres to [Calendar Versioning](https://calver.org/).
 
 ## [Unreleased]
 
+## 2026.10.3 - 2026-10-26
+
+## Fixed
+
+- Invoke `pandas.DataFrame._repr_html_` when `Relation._repr_html_` is called.
+- Invoke `pandas.DataFrame._repr_latex_` when `Relation._repr_latex_` is called.
+
 ## 2026.10.2 - 2026-10-26
 
 ### Added
