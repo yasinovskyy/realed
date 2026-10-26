@@ -550,7 +550,7 @@ wheels = [
 
 [[package]]
 name = "realed"
-version = "2026.10.1"
+version = "2026.10.2"
 source = { editable = "." }
 dependencies = [
     { name = "numpy" },
@@ -569,7 +569,7 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-dev = [{ name = "ipykernel", specifier = ">=7.3.0" }]
+dev = [{ name = "ipykernel", specifier = "==7.3.0" }]
 
 [[package]]
 name = "six"

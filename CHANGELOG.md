@@ -7,9 +7,12 @@ and this project adheres to [Calendar Versioning](https://calver.org/).
 
 ## [Unreleased]
 
+## 2026.10.2 - 2026-10-26
+
 ### Added
 
-`exact` parameter to `equals` to consider index when comparing relations
+- `exact` parameter to `equals` to consider index when comparing relations
+- `_repr_latex_` to make relations look like dataframes when rendered to PDF.
 
 ## Fixed
 

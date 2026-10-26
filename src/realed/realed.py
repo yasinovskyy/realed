@@ -93,6 +93,10 @@ class Relation:
         """Represent the relation as an HTML table"""
         return self._data.to_html()
 
+    def _repr_latex_(self) -> str:
+        """Represent the relation as LaTeX"""
+        return self._data.to_latex()
+
     def __str__(self) -> str:
         """Convert the relation to a string"""
         return str(self._data)
@@ -128,6 +132,10 @@ class Relation:
     def to_html(self) -> str:
         """Represent the relation as an HTML table"""
         return self._data.to_html()
+
+    def to_latex(self) -> str:
+        """Represent the relation as LaTeX"""
+        return self._data.to_latex()
 
     def copy(self) -> "Relation":
         """Return a deep copy of the relation"""
